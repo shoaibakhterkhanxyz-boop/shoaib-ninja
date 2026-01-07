@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shoaib Ninja</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { margin:0; background:#0f172a; overflow:hidden; font-family:Arial,sans-serif; }
+#game { display:block; margin:auto; background:#1e293b; touch-action:none; }
+.controls { position:fixed; bottom:10px; width:100%; display:flex; justify-content:center; gap:10px; }
+button { padding:15px 20px; font-size:18px; border-radius:10px; border:none; background:#38bdf8; color:black; }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="360" height="600"></canvas>
+
+<div class="controls">
+  <button ontouchstart="moveLeft=true" ontouchend="moveLeft=false">⬅</button>
+  <button ontouchstart="jump()">⬆</button>
+  <button ontouchstart="moveRight=true" ontouchend="moveRight=false">➡</button>
+</div>
+
+<script>
+// Canvas setup
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+// Player setup
+let player = {
+  x:50, y:500, w:32, h:32,
+  vx:0, vy:0, speed:3, jump:-10,
+  grounded:false, frame:0
+};
+
+let gravity = 0.5;
+let moveLeft=false, moveRight=false;
+
+// Platforms
+let platforms = [
+  {x:0, y:570, w:360, h:30},
+  {x:80, y:480, w:80, h:10},
+  {x:200, y:380, w:80, h:10},
+  {x:50, y:300, w:80, h:10}
+];
+
+function jump(){
+  if(player.grounded){
+    player.vy = player.jump;
+    player.grounded = false;
+  }
+}
+
+// Keyboard controls
+document.addEventListener("keydown", e=>{
+  if(e.key==="ArrowLeft") moveLeft=true;
+  if(e.key==="ArrowRight") moveRight=true;
+  if(e.key==="ArrowUp") jump();
+});
+document.addEventListener("keyup", e=>{
+  if(e.key==="ArrowLeft") moveLeft=false;
+  if(e.key==="ArrowRight") moveRight=false;
+});
+
+// Update
+function update(){
+  if(moveLeft) player.vx=-player.speed;
+  else if(moveRight) player.vx=player.speed;
+  else player.vx=0;
+
+  player.vy += gravity;
+  player.x += player.vx;
+  player.y += player.vy;
+
+  // Platform collision
+  player.grounded=false;
+  platforms.forEach(p=>{
+    if(player.x < p.x+p.w &&
+       player.x+player.w>p.x &&
+       player.y+player.h<p.y+10 &&
+       player.y+player.h+player.vy>=p.y){
+         player.y=p.y-player.h;
+         player.vy=0;
+         player.grounded=true;
+    }
+  });
+
+  // Simple animation effect
+  if(moveLeft || moveRight){
+    player.frame++;
+    if(player.frame>10) player.frame=0;
+  } else {
+    player.frame=0;
+  }
+
+  // Reset if fall
+  if(player.y>canvas.height){
+    player.x=50;
+    player.y=500;
+    player.vy=0;
+  }
+}
+
+// Draw
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Draw player (rectangle with simple animation effect)
+  if(player.frame<5) ctx.fillStyle="#facc15"; // yellow
+  else ctx.fillStyle="#fcd34d"; // lighter yellow
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+
+  // Draw platforms
+  ctx.fillStyle="#22c55e";
+  platforms.forEach(p=>{ ctx.fillRect(p.x,p.y,p.w,p.h); });
+}
+
+// Game loop
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+
+</body>
+</html>
